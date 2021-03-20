@@ -1,22 +1,33 @@
 import datetime
 import hashlib
 import json
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
+import requests
+from uuid import uuid4
+from urllib.parse import urlparse
 
 class Blockchain:
     # inicializa a blockchain
     def __init__(self):
+        # array de blocos
         self.chain = []
+        # array de transações que serão utilizadas nos blocos
+        self.transactions = []
         # já cria o primeiro bloco
         self.create_block(proof = 1, previous_hash = '0')
+        # cria os vários nós de uma rede, usando o set em vez de array, pq set não deixa repetir itens, e por ser melhor pra trabalhar com nós
+        self.nodes = set()
         
     # método para criar um bloco no array
     def create_block(self, proof, previous_hash):
         block = {'index': len(self.chain) + 1, 
                  'timestamp': str(datetime.datetime.now()),
                  'proof': proof,
-                 'previous_hash': previous_hash}
+                 'previous_hash': previous_hash,
+                 'transactions': self.transactions}
         
+        # adicionamos a transação no bloco, e logo em seguida limpamos a lista pra receber novas transações
+        self.transactions = []
         self.chain.append(block)
         return block
     
@@ -66,6 +77,19 @@ class Blockchain:
             block_index += 1
             
         return True
+    
+    def add_transaction(self, sender, receiver, amount):
+        self.transactions.append({
+            'sender': sender,
+            'receiver': receiver,
+            'amount': amount})
+        
+        previous_block = self.get_previous_block()
+        return previous_block['index'] + 1
+    
+    def add_node(self, address): 
+        parsed_url = urlparse(address)
+        self.nodes.add(parsed_url.netloc)
             
 
 app = Flask(__name__)
