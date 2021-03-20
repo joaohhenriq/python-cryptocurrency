@@ -87,9 +87,31 @@ class Blockchain:
         previous_block = self.get_previous_block()
         return previous_block['index'] + 1
     
-    def add_node(self, address): 
+    def add_node(self, address):
+        # faz o parse do endereço (algo do tipo: http://127.0.0.1:5000) de rede do nó, fica algo assim
+        # ParseResult(scheme='http', netloc='127.0.0.1:5000', path='/', ...)
         parsed_url = urlparse(address)
         self.nodes.add(parsed_url.netloc)
+        
+    # protocolo de consenso: verifica todos os blockchains (nós) da rede, identifica o que tem mais blocos, e substitui os outros o blockchain dos outros nós por esse
+    # com isso a gente garante que sempre todos os nós estarão em conformidade uns com os outros
+    def replace_chain(self):
+        network = self.nodes
+        longest_chain = None
+        max_length = len(self.chain)
+        for node in network:
+            response = requests.get(f'http://{node}/get_chain')
+            if response.status_code == 200:
+                length = response.json()['length']
+                chain = response.json()['chain']
+                if length > max_length and self.is_chain_valid(chain):
+                    max_length = length
+                    longest_chain = chain
+        
+        if longest_chain: #verifica se o atributo tá vazio
+            self.chain = longest_chain
+            return True
+        return False
             
 
 app = Flask(__name__)
