@@ -131,7 +131,7 @@ def mine_block():
     previous_proof = previous_block['proof']
     proof = blockchain.proof_of_work(previous_proof)
     previous_hash = blockchain.hash(previous_block)
-    blockchain.add_transaction(sender = node_address, receiver = 'Main Node', amount=1)
+    blockchain.add_transaction(sender = node_address, receiver = 'Node 5003', amount=1)
     
     block = blockchain.create_block(proof, previous_hash)
     response = {'message': 'You ve mine a block!',
@@ -201,7 +201,7 @@ def replace_chain():
     
     
 
-app.run(host = '0.0.0.0', port = 5000)
+app.run(host = '0.0.0.0', port = 5003)
 
 
 
