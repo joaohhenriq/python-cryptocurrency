@@ -117,21 +117,29 @@ class Blockchain:
 app = Flask(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 
+
+node_address = str(uuid4()).replace('-', '')
+
+
+
+
 blockchain = Blockchain()
 
-@app.route('/get_mine_block', methods = ['GET'])
-def get_mine_block():
+@app.route('/mine_block', methods = ['GET'])
+def mine_block():
     previous_block = blockchain.get_previous_block()
     previous_proof = previous_block['proof']
     proof = blockchain.proof_of_work(previous_proof)
     previous_hash = blockchain.hash(previous_block)
+    blockchain.add_transaction(sender = node_address, receiver = 'Teste Eu', amount=1)
     
     block = blockchain.create_block(proof, previous_hash)
-    response = {'message': 'Youve mine a block!',
+    response = {'message': 'You ve mine a block!',
                 'index': block['index'],
                 'timestamp': block['timestamp'],
                 'proof': block['proof'],
-                'previous_hash': block['previous_hash']}
+                'previous_hash': block['previous_hash'],
+                'transactions': block['transactions']}
     
     return jsonify(response), 200
 
@@ -151,7 +159,70 @@ def is_valid():
     return jsonify(response), 200
 
 
+@app.route('/add_transaction', methods = ['POST'])
+def add_transaction():
+    json = request.get_json()
+    transactions_keys = ['sender', 'receiver', 'amount']
+    if not all(key in json for key in transactions_keys):
+        return 'You have some missing elements', 400
+    
+    index = blockchain.add_transaction(json['sender'], json['receiver'], json['amount'])
+    response = {'message': f'Transaction add to block {index}'}
+    return jsonify(response),201
+
+
+@app.route('/conect_node', methods = ['POST'])
+def conect_node():
+    json = request.get_json()
+    nodes = json.get('nodes')
+    if nodes is None:
+        return 'Empty nodes...', 400
+    
+    for node in nodes:
+        blockchain.add_node(node)
+        
+    response = {'message': 'Nodes connected. Blockchain have these nodes: ',
+                'total_nodes': list(blockchain.nodes)}
+    return jsonify(response), 201
+
+
+@app.route('/replace_chain', methods = ['GET'])
+def replace_chain():
+    is_chain_replaced = blockchain.replace_chain()
+    if is_chain_replaced:
+        response = {'message': 'Nodes updated',
+                 'new_chain': blockchain.chain}
+    else:
+        response = {'message': 'No actions needed...',
+                 'actual_chain': blockchain.chain}
+    
+    return jsonify(response), 201
+        
+    
+    
+
 app.run(host = '0.0.0.0', port = 5000)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
